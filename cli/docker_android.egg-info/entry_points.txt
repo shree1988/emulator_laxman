@@ -1,0 +1,3 @@
+[console_scripts]
+docker-android=src.app:cli
+

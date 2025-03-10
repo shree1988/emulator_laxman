@@ -1,0 +1,8 @@
+setup.cfg
+setup.py
+docker_android.egg-info/PKG-INFO
+docker_android.egg-info/SOURCES.txt
+docker_android.egg-info/dependency_links.txt
+docker_android.egg-info/entry_points.txt
+docker_android.egg-info/requires.txt
+docker_android.egg-info/top_level.txt

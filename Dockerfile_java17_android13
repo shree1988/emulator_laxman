@@ -1,0 +1,105 @@
+FROM ubuntu:22.04
+MAINTAINER Sukesh "emailid"
+WORKDIR /root
+ARG RELEASE
+ARG LAUNCHPAD_BUILD_ARCH
+RUN apt-get -qqy update && \
+    apt dist-upgrade -y && \
+    apt-get -qqy --no-install-recommends install ca-certificates curl gnupg libgconf-2-4 libqt5webkit5 \
+    openjdk-17-jdk tzdata unzip wget xvfb zip && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV TZ=UTC
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV SDK_VERSION=commandlinetools-linux-8512546_latest
+ENV ANDROID_BUILD_TOOLS_VERSION=34.0.0
+ENV ANDROID_FOLDER_NAME=cmdline-tools
+ENV ANDROID_DOWNLOAD_PATH=/tmp/cmdline-tools
+ENV ANDROID_HOME=/opt/android ANDROID_TOOL_HOME=/opt/android/cmdline-tools
+RUN cd /tmp && wget -O tools.zip https://dl.google.com/android/repository/${SDK_VERSION}.zip && \
+    unzip tools.zip && rm tools.zip && \
+    chmod a+x -R ${ANDROID_DOWNLOAD_PATH} && mkdir -p ${ANDROID_TOOL_HOME} && \
+    mv ${ANDROID_DOWNLOAD_PATH} ${ANDROID_TOOL_HOME}/tools
+
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin:/opt/android/cmdline-tools/tools:/opt/android/cmdline-tools/tools/bin
+RUN mkdir -p ~/.android && \
+    touch ~/.android/repositories.cfg && \
+    echo y | sdkmanager "platform-tools"  && \
+    echo y | sdkmanager "build-tools;$ANDROID_BUILD_TOOLS_VERSION" 
+    #mv ~/.android .android
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin:/opt/android/cmdline-tools/tools:/opt/android/cmdline-tools/tools/bin::/opt/android/platform-tools:/opt/android/build-tools
+ENV NODE_VERSION=18
+#ENV APPIUM_VERSION=2.0.1
+#ENV APPIUM_VERSION=2.16.0
+ENV APPIUM_VERSION=2.13.1
+RUN curl -sL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash && \
+    apt-get -qqy install nodejs && \
+    npm install -g appium@${APPIUM_VERSION} && \
+    exit 0 && \
+    npm cache clean && \
+    apt-get remove --purge -y npm && \
+    apt-get autoremove --purge -y && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    apt-get clean
+ENV APPIUM_SCRIPT_PATH=appium-docker-android
+RUN mkdir -p ${APPIUM_SCRIPT_PATH}
+COPY appium-docker-android appium-docker-android
+ENV APP_PATH=/root/appium-docker-android
+ENV APPIUM_DRIVER_ESPRESSO_VERSION=2.24.0
+ENV APPIUM_DRIVER_FLUTTER_VERSION=1.15.0
+ENV APPIUM_DRIVER_GECKO_VERSION=1.1.10
+#ENV CHROMEDRIVER_VERSION=113.0.5672.63
+ENV CHROMEDRIVER_VERSION=109.0.5414.74
+#ENV APPIUM_DRIVER_UIAUTOMATOR2_VERSION=2.45.1
+ENV APPIUM_DRIVER_UIAUTOMATOR2_VERSION=3.9.2
+RUN appium driver install --source=npm appium-espresso-driver@${APPIUM_DRIVER_ESPRESSO_VERSION} && \
+    appium driver install --source=npm appium-flutter-driver@${APPIUM_DRIVER_FLUTTER_VERSION} && \
+    appium driver install --source=npm appium-geckodriver@${APPIUM_DRIVER_GECKO_VERSION} && \
+    appium driver install --source=npm appium-uiautomator2-driver@${APPIUM_DRIVER_UIAUTOMATOR2_VERSION}
+RUN npm install -g chromedriver
+    
+EXPOSE 4723
+#CMD ["/bin/sh" "-c" "./${SCRIPT_PATH}/start.sh"]
+RUN apt-get -qqy update && \
+    apt-get -qqy install --no-install-recommends socat supervisor && \
+    apt autoremove -y  && apt clean all  && rm -rf /var/lib/apt/lists/*
+RUN apt-get -qqy update && \
+    apt-get -qqy --no-install-recommends install python3-pip && \
+    apt-get clean   && rm -rf /var/lib/apt/lists/* && \
+    update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+ARG DOCKER_ANDROID_VERSION=test-version
+ENV DOCKER_ANDROID_VERSION=v2.0-p4
+EXPOSE 4723 5554 5555
+ARG EMULATOR_ANDROID_VERSION
+ARG EMULATOR_API_LEVEL
+ENV EMULATOR_ANDROID_VERSION=13.0 EMULATOR_API_LEVEL=33 EMULATOR_SYS_IMG=x86_64 EMULATOR_IMG_TYPE=google_apis EMULATOR_BROWSER=chrome
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin:/opt/android/cmdline-tools/tools:/opt/android/cmdline-tools/tools/bin::/opt/android/platform-tools:/opt/android/build-tools
+RUN /bin/sh -c yes | sdkmanager --licenses   && sdkmanager "platforms;android-${EMULATOR_API_LEVEL}"  "system-images;android-${EMULATOR_API_LEVEL};${EMULATOR_IMG_TYPE};${EMULATOR_SYS_IMG}" "emulator"   && ln -s ${ANDROID_HOME}/emulator/emulator /usr/bin/
+RUN apt-get -qqy update && \
+    apt-get -qqy install --no-install-recommends ffmpeg feh libxcomposite-dev menu openbox x11vnc xterm && \
+    apt autoremove -y  && apt clean all  && rm -rf /var/lib/apt/lists/*
+ENV NOVNC_VERSION=1.4.0 WEBSOCKIFY_VERSION=0.11.0 OPT_PATH=/opt
+RUN wget -nv -O noVNC.zip "https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.zip" && \
+    unzip -x noVNC.zip  && rm noVNC.zip && \
+    mv noVNC-${NOVNC_VERSION} ${OPT_PATH}/noVNC && \
+    wget -nv -O websockify.zip "https://github.com/novnc/websockify/archive/refs/tags/v${WEBSOCKIFY_VERSION}.zip" && \
+    unzip -x websockify.zip  && mv websockify-${WEBSOCKIFY_VERSION} ${OPT_PATH}/noVNC/utils/websockify && \
+    rm websockify.zip  && ln ${OPT_PATH}/noVNC/vnc.html ${OPT_PATH}/noVNC/index.html
+ENV DISPLAY=:0 SCREEN_NUMBER=0 SCREEN_WIDTH=1600 SCREEN_HEIGHT=900 SCREEN_DEPTH=24+32 VNC_PORT=5900 WEB_VNC_PORT=6080
+EXPOSE 5900 6080
+#RUN rm -rf ${SCRIPT_PATH}
+ENV SCRIPT_PATH=docker-android
+ENV WORK_PATH=/root
+ENV APP_PATH=/root/docker-android
+RUN mkdir -p ${APP_PATH}
+COPY mixins /root/docker-android/mixins
+COPY cli /root/docker-android/cli
+RUN pip install --quiet -e ${APP_PATH}/cli
+RUN echo ${APP_PATH}/mixins/configs/display/.fehbg >> /etc/xdg/openbox/autostart
+ENV LOG_PATH=/root/logs WEB_LOG_PORT=9000
+EXPOSE 9000
+RUN mkdir -p ${LOG_PATH}
+STOPSIGNAL SIGTERM
+ENV DEVICE_TYPE=emulator
+#ENTRYPOINT ["/root/docker-android/mixins/scripts/run.sh"]
+CMD (bash ./${APPIUM_SCRIPT_PATH}/start.sh) & (bash /root/docker-android/mixins/scripts/run.sh)
