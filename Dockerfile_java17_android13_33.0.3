@@ -12,7 +12,7 @@ RUN apt-get -qqy update && \
 ENV TZ=UTC
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV SDK_VERSION=commandlinetools-linux-8512546_latest
-ENV ANDROID_BUILD_TOOLS_VERSION=34.0.0
+ENV ANDROID_BUILD_TOOLS_VERSION=33.0.3
 ENV ANDROID_FOLDER_NAME=cmdline-tools
 ENV ANDROID_DOWNLOAD_PATH=/tmp/cmdline-tools
 ENV ANDROID_HOME=/opt/android ANDROID_TOOL_HOME=/opt/android/cmdline-tools
@@ -31,7 +31,7 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/bin:/opt/
 ENV NODE_VERSION=18
 #ENV APPIUM_VERSION=2.0.1
 #ENV APPIUM_VERSION=2.16.0
-ENV APPIUM_VERSION=2.13.1
+ENV APPIUM_VERSION=2.16.0
 RUN curl -sL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash && \
     apt-get -qqy install nodejs && \
     npm install -g appium@${APPIUM_VERSION} && \
